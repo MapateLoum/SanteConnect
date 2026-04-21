@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation'; // ✅ ajout
 import { useAuth } from '@/context/AuthContext';
-import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight, Stethoscope } from 'lucide-react';
+import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight,Clock, Stethoscope } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -10,6 +11,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams(); // ✅ ajout
+  const expired = searchParams.get('reason') === 'expired'; // ✅ ajout
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +62,13 @@ export default function LoginPage() {
 
           <h2 className="text-3xl font-bold text-gray-800 mb-2" style={{fontFamily:'Sora,sans-serif'}}>Connexion</h2>
           <p className="text-gray-500 mb-8">Pas encore de compte ? <Link href="/auth/register" className="text-sky-600 font-medium hover:underline">S'inscrire gratuitement</Link></p>
+{/* ✅ Bannière session expirée */}
+{expired && (
+  <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm mb-6">
+    <Clock className="w-4 h-4 flex-shrink-0" />
+    <span>Votre session a expiré après 8h. Veuillez vous reconnecter.</span>
+  </div>
+)}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

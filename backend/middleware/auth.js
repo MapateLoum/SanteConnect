@@ -20,9 +20,12 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Utilisateur introuvable' });
     }
     next();
-  } catch {
-    return res.status(401).json({ success: false, message: 'Token invalide' });
+ } catch (err) {
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ success: false, message: 'Session expirée', expired: true });
   }
+  return res.status(401).json({ success: false, message: 'Token invalide' });
+}
 };
 
 const authorize = (...roles) => {

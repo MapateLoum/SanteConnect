@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '8h' });
 };
 
 const sendTokenResponse = (user, statusCode, res) => {

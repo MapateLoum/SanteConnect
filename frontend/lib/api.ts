@@ -13,13 +13,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ✅ Après
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = sessionStorage.getItem('sc_token'); // ✅ sessionStorage
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('sc_token');
-      localStorage.removeItem('sc_user');
-      window.location.href = '/auth/login';
+      sessionStorage.removeItem('sc_token'); // ✅ sessionStorage
+      sessionStorage.removeItem('sc_user');
+      
+      if (err.response?.data?.expired) {
+        window.location.href = '/auth/login?reason=expired';
+      } else {
+        window.location.href = '/auth/login';
+      }
     }
     return Promise.reject(err);
   }
