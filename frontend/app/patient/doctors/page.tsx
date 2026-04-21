@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Search, Star, Brain, Calendar, FileText, MessageSquare, User, LayoutDashboard, Stethoscope, Filter, ChevronRight, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ const NAV = [
   { href: '/patient/profile', label: 'Mon profil', icon: <User className="w-4 h-4" /> },
 ];
 
-export default function DoctorsPage() {
+function DoctorsContent() {
   const searchParams = useSearchParams();
   const [doctors, setDoctors] = useState<any[]>([]);
   const [specialties, setSpecialties] = useState<string[]>([]);
@@ -115,5 +115,17 @@ export default function DoctorsPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function DoctorsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F8FAFF] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <DoctorsContent />
+    </Suspense>
   );
 }
