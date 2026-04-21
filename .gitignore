@@ -23,3 +23,5 @@ backend/.env.local
 backend/.env.production
 backend/dist/
 backend/build/
+backend/create-admin.js
+backend/seed.js
