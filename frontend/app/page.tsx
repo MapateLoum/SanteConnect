@@ -216,8 +216,14 @@ export default function Home() {
             <span className="text-white font-bold text-lg" style={{fontFamily:'Sora,sans-serif'}}>SantéConnect</span>
           </div>
           <p className="text-sm mb-6 max-w-sm">La première plateforme de téléconsultation médicale du Sénégal.</p>
-          <div className="border-t border-gray-800 pt-6 text-center text-sm">© 2025 SantéConnect — Tous droits réservés</div>
-        </div>
+<div className="border-t border-gray-800 pt-6 text-center text-sm">
+  © 2026 SantéConnect — Tous droits réservés
+  <span className="mx-2">·</span>
+  Développé par{' '}
+  <a href="https://portfolio-mapate.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:text-sky-300 transition-colors">
+    Papa Mapaté Loum
+  </a>
+</div>        </div>
       </footer>
     </div>
   );
