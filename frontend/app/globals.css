@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary: #0EA5E9;
+  --primary-dark: #0284C7;
+  --primary-light: #E0F2FE;
+  --secondary: #10B981;
+  --bg: #F8FAFF;
+  --shadow: 0 4px 24px rgba(14,165,233,0.08);
+  --shadow-lg: 0 8px 40px rgba(14,165,233,0.15);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.glass {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg,#0EA5E9,#10B981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg,#0EA5E9 0%,#0284C7 50%,#10B981 100%);
+}
+
+.card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.card-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+.animate-float       { animation: float 6s ease-in-out infinite; }
+.animate-float-delay { animation: float 6s ease-in-out infinite 2s; }
+.page-enter          { animation: pageEnter 0.4s ease forwards; }
+.animate-fade-up     { animation: fadeUp 0.4s ease forwards; }
+.animate-slide-in    { animation: slideIn 0.3s ease forwards; }
+.animate-scale-in    { animation: scaleIn 0.3s ease forwards; }
+
+@keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes pageEnter { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn   { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scaleIn   { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:#f1f5f9; }
+::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: linear-gradient(135deg,#0EA5E9,#0284C7);
+  color: white; font-weight: 500; padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem; transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(14,165,233,0.2);
+}
+.btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(14,165,233,0.3); }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: white; color: #374151; font-weight: 500;
+  padding: 0.75rem 1.5rem; border-radius: 0.75rem;
+  border: 1px solid #e5e7eb; transition: all 0.2s;
+}
+.btn-secondary:hover { background: #f9fafb; }
+
+.input-field {
+  width: 100%; padding: 0.75rem 1rem;
+  background: white; border: 1px solid #e5e7eb;
+  border-radius: 0.75rem; color: #1f2937;
+  font-size: 0.875rem; transition: all 0.2s;
+  outline: none; font-family: 'DM Sans', sans-serif;
+}
+.input-field::placeholder { color: #9ca3af; }
+.input-field:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+.input-icon { padding-left: 2.75rem !important; }
+
+.card {
+  background: white; border-radius: 1rem;
+  border: 1px solid #f3f4f6; padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.badge-pending   { display:inline-flex; background:#fef3c7; color:#92400e; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:9999px; }
+.badge-confirmed { display:inline-flex; background:#e0f2fe; color:#075985; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:9999px; }
+.badge-completed { display:inline-flex; background:#d1fae5; color:#065f46; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:9999px; }
+.badge-cancelled { display:inline-flex; background:#fee2e2; color:#991b1b; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:9999px; }
+.badge-ongoing   { display:inline-flex; background:#ede9fe; color:#5b21b6; font-size:0.75rem; font-weight:500; padding:0.25rem 0.625rem; border-radius:9999px; }

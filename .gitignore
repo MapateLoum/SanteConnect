@@ -1,0 +1,25 @@
+# ================================
+# FRONTEND (Next.js / React)
+# ================================
+
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
+frontend/.vercel/
+
+# ================================
+# BACKEND (Node.js / Python / etc.)
+# ================================
+
+# Node
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/dist/
+backend/build/
