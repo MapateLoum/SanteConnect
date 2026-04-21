@@ -45,21 +45,10 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
     const s = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', { auth: { token } });
     s.emit('join_consultation', consultation._id);
 
+    // ✅ FIX : le listener reçoit uniquement les messages des AUTRES
+    // (l'envoyeur a déjà son optimistic update, pas besoin de remplacer)
     s.on('new_message', (msg: any) => {
-      setMessages(prev => {
-        // ✅ Remplacer le message optimiste correspondant par le vrai message
-        // On cherche un temp_ avec le même contenu pour éviter le doublon
-        const tempIndex = prev.findIndex(
-          m => m._id?.startsWith('temp_') && m.content === msg.content
-        );
-        if (tempIndex !== -1) {
-          const updated = [...prev];
-          updated[tempIndex] = msg;
-          return updated;
-        }
-        // Sinon c'est un message de l'autre personne → l'ajouter
-        return [...prev, msg];
-      });
+      setMessages(prev => [...prev, msg]);
     });
 
     s.on('typing', ({ name, isTyping }: any) => {
@@ -84,7 +73,7 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
     const tempId = `temp_${Date.now()}`;
     const content = input;
 
-    // ✅ Optimistic update avec tempId unique et sender = user complet
+    // ✅ Optimistic update local immédiat
     const optimisticMsg = {
       _id: tempId,
       sender: user,
@@ -96,12 +85,15 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
     setMessages(prev => [...prev, optimisticMsg]);
     setInput('');
 
-    // Envoyer via socket ET API
+    // ✅ Envoyer via socket avec tempId (broadcast aux autres seulement côté backend)
     socket.emit('send_message', {
       consultationId: consultation._id,
       content,
       type: 'text',
+      tempId,
     });
+
+    // ✅ Sauvegarder en DB — le controller ne ré-émet plus via socket
     api.post(`/consultations/${consultation._id}/message`, { content }).catch(() => {});
   };
 
@@ -169,7 +161,6 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {/* Boutons uniquement pour le médecin */}
         {isDoctor && (
           <div className="flex items-center gap-2">
             <button

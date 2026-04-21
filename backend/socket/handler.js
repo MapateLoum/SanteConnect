@@ -22,13 +22,11 @@ const socketHandler = (io) => {
     const userId = socket.user._id.toString();
     connectedUsers.set(userId, socket.id);
 
-    // Join personal room
     socket.join(`patient_${userId}`);
     socket.join(`doctor_${userId}`);
 
     console.log(`✅ ${socket.user.firstName} connecté (${socket.user.role})`);
 
-    // Join consultation room
     socket.on('join_consultation', (consultationId) => {
       socket.join(`consultation_${consultationId}`);
       socket.to(`consultation_${consultationId}`).emit('user_joined', {
@@ -38,26 +36,31 @@ const socketHandler = (io) => {
       });
     });
 
-    // Leave consultation
     socket.on('leave_consultation', (consultationId) => {
       socket.leave(`consultation_${consultationId}`);
       socket.to(`consultation_${consultationId}`).emit('user_left', { userId });
     });
 
-    // Real-time message
-    socket.on('send_message', ({ consultationId, content, type }) => {
+    // ✅ FIX : broadcast aux autres seulement + on passe le tempId
+    socket.on('send_message', ({ consultationId, content, type, tempId }) => {
       const message = {
-        _id: Date.now().toString(),
-        sender: { _id: userId, firstName: socket.user.firstName, lastName: socket.user.lastName, avatar: socket.user.avatar, role: socket.user.role },
+        tempId,
+        sender: {
+          _id: userId,
+          firstName: socket.user.firstName,
+          lastName: socket.user.lastName,
+          avatar: socket.user.avatar,
+          role: socket.user.role,
+        },
         content,
         type: type || 'text',
         createdAt: new Date().toISOString(),
         read: false,
       };
-      io.to(`consultation_${consultationId}`).emit('new_message', message);
+      // ✅ broadcast = tout le monde dans la room SAUF l'envoyeur
+      socket.broadcast.to(`consultation_${consultationId}`).emit('new_message', message);
     });
 
-    // Typing indicator
     socket.on('typing', ({ consultationId, isTyping }) => {
       socket.to(`consultation_${consultationId}`).emit('typing', {
         userId,
@@ -66,12 +69,10 @@ const socketHandler = (io) => {
       });
     });
 
-    // Doctor availability
     socket.on('update_availability', (isAvailable) => {
       socket.broadcast.emit('doctor_availability', { doctorUserId: userId, isAvailable });
     });
 
-    // Appointment reminder
     socket.on('appointment_reminder', ({ patientId, message }) => {
       const patientSocketId = connectedUsers.get(patientId);
       if (patientSocketId) {

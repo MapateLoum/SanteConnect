@@ -39,7 +39,7 @@ exports.getMyConsultations = async (req, res) => {
     const consultations = await Consultation.find(query)
       .populate('patient', 'firstName lastName avatar')
       .populate({ path: 'doctor', populate: { path: 'user', select: 'firstName lastName avatar' } })
-      .populate('appointment')  // ✅ ajout
+      .populate('appointment')
       .sort({ createdAt: -1 });
 
     res.json({ success: true, consultations });
@@ -89,7 +89,9 @@ exports.sendMessage = async (req, res) => {
     await consultation.save();
 
     const newMsg = consultation.messages[consultation.messages.length - 1];
-    if (req.io) req.io.to(`consultation_${consultation._id}`).emit('new_message', { ...newMsg.toObject(), sender: req.user });
+
+    // ✅ FIX : on n'émet plus via socket ici — le socket.js s'en charge déjà
+    // Supprimer l'ancien : req.io.to(...).emit('new_message', ...)
 
     res.status(201).json({ success: true, message: newMsg });
   } catch (err) {
