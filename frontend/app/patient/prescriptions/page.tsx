@@ -5,6 +5,7 @@ import { FileText, Brain, Calendar, MessageSquare, User, LayoutDashboard, Stetho
 import api from '@/lib/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 
 const NAV = [
   { href: '/patient/dashboard', label: 'Tableau de bord', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -23,6 +24,24 @@ export default function PrescriptionsPage() {
   useEffect(() => {
     api.get('/prescriptions/my').then(r => setPrescriptions(r.data.prescriptions || [])).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  const downloadPdf = async (prescriptionId: string) => {
+    try {
+      const response = await api.get(`/prescriptions/${prescriptionId}/pdf`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ordonnance_${prescriptionId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erreur lors du téléchargement');
+    }
+  };
 
   return (
     <DashboardLayout navItems={NAV} title="Mes ordonnances">
@@ -43,13 +62,15 @@ export default function PrescriptionsPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-800">Dr. {p.doctor?.user?.firstName} {p.doctor?.user?.lastName}</h4>
-                  <p className="text-gray-400 text-sm">{format(new Date(p.createdAt), 'dd MMMM yyyy', {locale:fr})}</p>
+                  <p className="text-gray-400 text-sm">{format(new Date(p.createdAt), 'dd MMMM yyyy', { locale: fr })}</p>
                 </div>
               </div>
-              <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/prescriptions/${p._id}/pdf`}
-                target="_blank" className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
+              <button
+                onClick={() => downloadPdf(p._id)}
+                className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors"
+              >
                 <Download className="w-4 h-4" /> Télécharger PDF
-              </a>
+              </button>
             </div>
             {p.diagnosis && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">

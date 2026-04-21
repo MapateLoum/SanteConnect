@@ -3,8 +3,6 @@ const Consultation = require('../models/Consultation');
 const Doctor = require('../models/Doctor');
 const User = require('../models/User');
 const PDFDocument = require('pdfkit');
-const path = require('path');
-const fs = require('fs');
 
 // POST /api/prescriptions
 exports.createPrescription = async (req, res) => {
@@ -77,71 +75,166 @@ exports.downloadPdf = async (req, res) => {
       .populate({ path: 'doctor', populate: { path: 'user', select: 'firstName lastName phone' } });
     if (!prescription) return res.status(404).json({ success: false, message: 'Ordonnance introuvable' });
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const doc = new PDFDocument({ margin: 0, size: 'A4' });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=ordonnance_${prescription._id}.pdf`);
     doc.pipe(res);
 
-    // Header
-    doc.fontSize(22).fillColor('#0EA5E9').text('SantéConnect', 50, 50);
-    doc.fontSize(10).fillColor('#666').text('Plateforme de téléconsultation médicale', 50, 78);
-    doc.moveTo(50, 100).lineTo(545, 100).strokeColor('#0EA5E9').stroke();
+    const W = 595.28;
+    const BLUE      = '#0EA5E9';
+    const DARK_BLUE = '#0369A1';
+    const LIGHT_BG  = '#F0F9FF';
+    const GRAY      = '#64748B';
+    const DARK      = '#1E293B';
+    const WHITE     = '#FFFFFF';
+    const DIVIDER   = '#E2E8F0';
 
-    // Doctor info
-    doc.fontSize(12).fillColor('#333').text('MÉDECIN PRESCRIPTEUR', 50, 120);
+    // ── Header banner ──────────────────────────────────────────
+    doc.rect(0, 0, W, 110).fill(BLUE);
+
+    // Logo circle
+    doc.circle(60, 55, 28).fill(WHITE);
+    doc.fontSize(22).fillColor(BLUE).font('Helvetica-Bold').text('S', 49, 43);
+
+    // Title
+    doc.fontSize(26).fillColor(WHITE).font('Helvetica-Bold').text('SantéConnect', 100, 30);
+    doc.fontSize(11).fillColor('#BAE6FD').font('Helvetica').text('Ordonnance Médicale', 100, 62);
+
+    // Prescription ID badge
+    const idText = `N° ${prescription._id.toString().slice(-8).toUpperCase()}`;
+    doc.fontSize(9).fillColor(WHITE).font('Helvetica');
+    const idW = doc.widthOfString(idText) + 20;
+    doc.roundedRect(W - idW - 40, 42, idW, 22, 11).fill('rgba(255,255,255,0.2)');
+    doc.fillColor(WHITE).text(idText, W - idW - 30, 48);
+
+    // ── Date bar ───────────────────────────────────────────────
+    doc.rect(0, 110, W, 32).fill(DARK_BLUE);
+    const dateStr  = new Date(prescription.issuedAt || prescription.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const validStr = prescription.validUntil
+      ? new Date(prescription.validUntil).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : 'Non spécifié';
+    doc.fontSize(9).fillColor('#BAE6FD').font('Helvetica').text(`Emise le : ${dateStr}`, 50, 120);
+    doc.text(`Valide jusqu'au : ${validStr}`, 320, 120);
+
+    // ── Doctor / Patient cards ─────────────────────────────────
+    const cardTop = 160;
+    const cardH   = 110;
+
+    // Doctor card
+    doc.roundedRect(40, cardTop, 240, cardH, 10).fill(LIGHT_BG);
+    doc.roundedRect(40, cardTop, 240, cardH, 10).stroke(BLUE);
+    doc.rect(40, cardTop, 6, cardH).fill(BLUE); // accent bar
+
+    doc.fontSize(8).fillColor(BLUE).font('Helvetica-Bold')
+      .text('MÉDECIN PRESCRIPTEUR', 56, cardTop + 14);
+
     const d = prescription.doctor;
-    doc.fontSize(11).fillColor('#000')
-      .text(`Dr. ${d.user.firstName} ${d.user.lastName}`, 50, 140)
-      .text(`Spécialité : ${d.specialty}`, 50, 158)
-      .text(`N° Ordre : ${d.licenseNumber}`, 50, 176);
+    doc.fontSize(13).fillColor(DARK).font('Helvetica-Bold')
+      .text(`Dr. ${d.user.firstName} ${d.user.lastName}`, 56, cardTop + 30);
+    doc.fontSize(10).fillColor(GRAY).font('Helvetica')
+      .text(`Spécialité : ${d.specialty || 'N/A'}`, 56, cardTop + 52)
+      .text(`N° Ordre   : ${d.licenseNumber || 'N/A'}`, 56, cardTop + 68)
+      .text(`Tél         : ${d.user.phone || 'N/A'}`, 56, cardTop + 84);
 
-    // Patient info
-    doc.fontSize(12).fillColor('#333').text('PATIENT', 300, 120);
+    // Patient card
+    doc.roundedRect(315, cardTop, 240, cardH, 10).fill(LIGHT_BG);
+    doc.roundedRect(315, cardTop, 240, cardH, 10).stroke(BLUE);
+    doc.rect(549, cardTop, 6, cardH).fill(BLUE); // accent bar right
+
+    doc.fontSize(8).fillColor(BLUE).font('Helvetica-Bold')
+      .text('PATIENT', 330, cardTop + 14);
+
     const p = prescription.patient;
-    doc.fontSize(11).fillColor('#000')
-      .text(`${p.firstName} ${p.lastName}`, 300, 140)
-      .text(`Né(e) le : ${p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('fr-FR') : 'N/A'}`, 300, 158)
-      .text(`Ville : ${p.city || 'N/A'}`, 300, 176);
+    doc.fontSize(13).fillColor(DARK).font('Helvetica-Bold')
+      .text(`${p.firstName} ${p.lastName}`, 330, cardTop + 30);
+    doc.fontSize(10).fillColor(GRAY).font('Helvetica')
+      .text(`Né(e) le : ${p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString('fr-FR') : 'N/A'}`, 330, cardTop + 52)
+      .text(`Ville     : ${p.city || 'N/A'}`, 330, cardTop + 68)
+      .text(`Tél       : ${p.phone || 'N/A'}`, 330, cardTop + 84);
 
-    doc.moveTo(50, 210).lineTo(545, 210).strokeColor('#ddd').stroke();
+    // ── Diagnostic section ─────────────────────────────────────
+    let yPos = cardTop + cardH + 24;
 
-    // Date
-    doc.fontSize(10).fillColor('#666')
-      .text(`Date : ${new Date(prescription.issuedAt).toLocaleDateString('fr-FR')}`, 50, 222)
-      .text(`Valide jusqu\'au : ${prescription.validUntil ? new Date(prescription.validUntil).toLocaleDateString('fr-FR') : 'Non spécifié'}`, 300, 222);
-
-    // Diagnosis
     if (prescription.diagnosis) {
-      doc.fontSize(12).fillColor('#333').text('DIAGNOSTIC', 50, 255);
-      doc.fontSize(11).fillColor('#000').text(prescription.diagnosis, 50, 275, { width: 495 });
+      // Section title
+      doc.fontSize(10).fillColor(BLUE).font('Helvetica-Bold').text('DIAGNOSTIC', 50, yPos);
+      doc.moveTo(50, yPos + 16).lineTo(W - 50, yPos + 16).strokeColor(DIVIDER).lineWidth(1).stroke();
+      yPos += 24;
+
+      doc.roundedRect(40, yPos, W - 80, 40, 6).fill('#FFF7ED');
+      doc.roundedRect(40, yPos, 4, 40, 2).fill('#F97316');
+      doc.fontSize(11).fillColor(DARK).font('Helvetica')
+        .text(prescription.diagnosis, 56, yPos + 12, { width: W - 110 });
+      yPos += 56;
     }
 
-    // Medications
-    let yPos = 320;
-    doc.fontSize(12).fillColor('#333').text('MÉDICAMENTS PRESCRITS', 50, yPos);
-    yPos += 25;
+    // ── Medications section ────────────────────────────────────
+    doc.fontSize(10).fillColor(BLUE).font('Helvetica-Bold').text('MÉDICAMENTS PRESCRITS', 50, yPos);
+    doc.moveTo(50, yPos + 16).lineTo(W - 50, yPos + 16).strokeColor(DIVIDER).lineWidth(1).stroke();
+    yPos += 26;
 
     prescription.medications.forEach((med, i) => {
-      doc.rect(50, yPos, 495, 80).fillColor('#f8fafc').fill().strokeColor('#e2e8f0').stroke();
-      doc.fontSize(12).fillColor('#0EA5E9').text(`${i + 1}. ${med.name}`, 65, yPos + 10);
-      doc.fontSize(10).fillColor('#333')
-        .text(`Dosage : ${med.dosage}`, 65, yPos + 28)
-        .text(`Fréquence : ${med.frequency}`, 65, yPos + 44)
-        .text(`Durée : ${med.duration}`, 300, yPos + 28);
-      if (med.instructions) doc.text(`Instructions : ${med.instructions}`, 65, yPos + 60);
-      yPos += 95;
+      const medH = med.instructions ? 95 : 78;
+
+      // Card shadow effect
+      doc.roundedRect(42, yPos + 2, W - 84, medH, 8).fill('#E2E8F0');
+      doc.roundedRect(40, yPos, W - 80, medH, 8).fill(WHITE);
+      doc.roundedRect(40, yPos, W - 80, medH, 8).stroke(DIVIDER).lineWidth(0.5);
+
+      // Number badge
+      doc.circle(64, yPos + 20, 12).fill(BLUE);
+      doc.fontSize(10).fillColor(WHITE).font('Helvetica-Bold').text(`${i + 1}`, 59, yPos + 14);
+
+      // Med name
+      doc.fontSize(13).fillColor(DARK).font('Helvetica-Bold')
+        .text(med.name, 84, yPos + 12, { width: W - 140 });
+
+      // Details row
+      const detailY = yPos + 34;
+      const details = [
+        { label: 'Dosage',     value: med.dosage },
+        { label: 'Frequence',  value: med.frequency },
+        { label: 'Duree',      value: med.duration },
+      ];
+
+      details.forEach((detail, j) => {
+        const x = 84 + j * 160;
+        doc.fontSize(8).fillColor(GRAY).font('Helvetica').text(detail.label, x, detailY);
+        doc.fontSize(10).fillColor(DARK).font('Helvetica-Bold').text(detail.value || 'N/A', x, detailY + 13);
+      });
+
+      if (med.instructions) {
+        doc.roundedRect(84, yPos + 68, W - 130, 18, 4).fill('#F1F5F9');
+        doc.fontSize(9).fillColor(GRAY).font('Helvetica')
+          .text(`Instructions : ${med.instructions}`, 90, yPos + 72, { width: W - 140 });
+      }
+
+      yPos += medH + 12;
     });
 
+    // ── Notes section ──────────────────────────────────────────
     if (prescription.notes) {
-      doc.fontSize(12).fillColor('#333').text('NOTES', 50, yPos + 10);
-      doc.fontSize(11).fillColor('#000').text(prescription.notes, 50, yPos + 30, { width: 495 });
+      yPos += 8;
+      doc.fontSize(10).fillColor(BLUE).font('Helvetica-Bold').text('NOTES DU MÉDECIN', 50, yPos);
+      doc.moveTo(50, yPos + 16).lineTo(W - 50, yPos + 16).strokeColor(DIVIDER).lineWidth(1).stroke();
+      yPos += 26;
+      doc.roundedRect(40, yPos, W - 80, 50, 6).fill('#F8FAFC');
+      doc.fontSize(10).fillColor(DARK).font('Helvetica')
+        .text(prescription.notes, 56, yPos + 12, { width: W - 110 });
+      yPos += 62;
     }
 
-    // Footer
-    doc.moveTo(50, 750).lineTo(545, 750).strokeColor('#0EA5E9').stroke();
-    doc.fontSize(9).fillColor('#999')
-      .text('Document généré par SantéConnect — santeconnect.sn', 50, 760, { align: 'center' })
-      .text('Ce document est valide uniquement avec la signature numérique du médecin', 50, 775, { align: 'center' });
+    // ── Footer ─────────────────────────────────────────────────
+    const footerY = 780;
+    doc.rect(0, footerY, W, 61.28).fill(DARK_BLUE);
+    doc.moveTo(0, footerY).lineTo(W, footerY).strokeColor(BLUE).lineWidth(2).stroke();
+
+    doc.fontSize(9).fillColor('#BAE6FD').font('Helvetica')
+      .text('Document généré par SantéConnect — santeconnect.sn', 0, footerY + 12, { align: 'center', width: W });
+    doc.fontSize(8).fillColor('#7DD3FC')
+      .text('Ce document est valide uniquement avec la signature numérique du médecin', 0, footerY + 28, { align: 'center', width: W });
+    doc.fontSize(8).fillColor('#38BDF8')
+      .text(`Référence : ${prescription._id}`, 0, footerY + 44, { align: 'center', width: W });
 
     doc.end();
   } catch (err) {
