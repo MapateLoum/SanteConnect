@@ -102,14 +102,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     else router.push('/patient/dashboard');
   };
 
-  const logout = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    sessionStorage.removeItem('sc_token');
-    sessionStorage.removeItem('sc_user');
-    delete axios.defaults.headers.common['Authorization'];
-    router.push('/');
-  }, [router]);
+const logout = useCallback(() => {
+  setUser(null);
+  setToken(null);
+  sessionStorage.removeItem('sc_token');
+  sessionStorage.removeItem('sc_user');
+  delete axios.defaults.headers.common['Authorization'];
+  // ✅ Hard reload au lieu de router.push
+  window.location.href = '/auth/login';
+}, []);
 
   const updateUser = (updated: User) => {
     setUser(updated);
